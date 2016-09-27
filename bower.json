@@ -1,0 +1,31 @@
+{
+  "name": "whiteboard",
+  "authors": [
+    "Stein Runar Bergheim <rb@avinet.no>"
+  ],
+  "description": "Map whiteboard based on Map Compositions",
+  "main": "src/main/webapp/index.html",
+  "keywords": [
+    "Map",
+    "Compositions",
+    "json",
+    "websockets"
+  ],
+  "license": "MIT",
+  "homepage": "http://www.sdi4apps.eu",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "fast-json-patch": "^1.1.1",
+    "jquery": "^3.1.1",
+    "bootstrap": "^3.3.7",
+    "ol3": "hastebrot/ol3-dist#^3.1.1",
+    "jquery-3.1.1.min": "https://code.jquery.com/jquery-3.1.1.min.js"
+  }
+}

@@ -1,0 +1,4 @@
+target/
+bower_components/
+nb-configuration.xml
+src/main/webapp/lib/
