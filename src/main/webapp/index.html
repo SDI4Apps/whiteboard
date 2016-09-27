@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Whiteboard embryo</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">        
+        <link href="lib/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" type="text/css"/>
+        <link href="lib/bootstrap/dist/css/bootstrap-theme.min.css" rel="stylesheet" type="text/css"/>
+        <link href="lib/ol3/dist/ol.css" rel="stylesheet" type="text/css"/>
+        <link href="css/styles.css" rel="stylesheet" type="text/css"/>
+        <script src="lib/jquery-3.1.1.min/index.js" type="text/javascript"></script>
+        <script src="lib/bootstrap/dist/js/bootstrap.min.js" type="text/javascript"></script>
+        <script src="lib/ol3/dist/ol.js" type="text/javascript"></script>
+        <script src="lib/fast-json-patch/dist/json-patch.min.js" type="text/javascript"></script>
+        <script src="lib/fast-json-patch/src/json-patch-duplex.js" type="text/javascript"></script>
+        <script src="js/s4a.whiteboard.js" type="text/javascript"></script>
+        <script type="text/javascript">
+
+            var synchronize;
+
+            jQuery('document').ready(function() {
+
+                synchronize = function() {
+                    s4a.whiteboard.synchronize(geojson, JSON.parse(jQuery('textarea#json').val()));
+                };
+
+                var geojson = {
+                    "type": 'FeatureCollection',
+                    "crs": {
+                        "type": "Points",
+                        "properties": {
+                            "name": 'EPSG:4326'
+                        }
+                    },
+                    "features": [
+                        {
+                            "type": "Feature",
+                            "geometry": {
+                                "type": "Point",
+                                "coordinates": [2.1734, 41.38]
+                            },
+                            "properties": {
+                                "name": "Barcelona"
+                            }
+                        }
+                    ]
+                };
+
+                var reload = function() {
+                    vectorSource.clear();
+                    vectorSource.addFeatures(new ol.format.GeoJSON()
+                        .readFeatures(geojson, {
+                            featureProjection: 'EPSG:3857'
+                        }));
+                    jQuery("#json").val(JSON.stringify(geojson));
+                };
+
+                /**
+                 * Setup a vector source with the GeoJSON
+                 * 
+                 * @type ol.source.Vector
+                 */
+                var vectorSource = new ol.source.Vector({});
+
+                /**
+                 * Create a vector layer to draw the GeoJSON
+                 * 
+                 * @type ol.layer.Vector
+                 */
+                var vectorLayer = new ol.layer.Vector({
+                    source: vectorSource,
+                    style: new ol.style.Style({
+                        image: new ol.style.Circle({
+                            radius: 7,
+                            fill: null,
+                            stroke: new ol.style.Stroke({
+                                color: 'red', width: 3
+                            })
+                        })
+                    })
+                });
+
+                reload();
+
+                /**
+                 * We need a simple map to update
+                 * 
+                 * @type ol.Map
+                 */
+                var map = new ol.Map({
+                    layers: [
+                        new ol.layer.Tile({
+                            source: new ol.source.OSM()
+                        }),
+                        vectorLayer
+                    ],
+                    target: 'map',
+                    view: new ol.View({
+                        center: ol.proj.transform([2.1734, 41.38], 'EPSG:4326', 'EPSG:3857'),
+                        zoom: 12,
+                        projection: 'EPSG:3857'
+                    })
+                });
+
+                /**
+                 * Set up an observer to check for changes in the objects and send it to the websocket server
+                 */
+                jsonpatch.observe(geojson, function(patch) {
+                    s4a.whiteboard.send(JSON.stringify(patch));
+                    reload();
+                });
+
+                /**
+                 * Specify the server where the whiteboard websocket is sitting
+                 */
+                s4a.whiteboard.setSocketServerUrl('portal.sdi4apps.eu/whiteboard/websocket');
+
+                /** 
+                 * Initialize the connection - the function specified as parameter will receive
+                 * any messages sent from the websocket server
+                 */
+                s4a.whiteboard.init(function(event) {
+                    s4a.whiteboard.applyPatchString(geojson, event.data);
+                    reload();
+                });
+
+            });
+        </script>        
+    </head>
+    <body>
+        <div id="map"></div>
+        <div>
+            <textarea id="json" class="form-control"></textarea>
+        </div>
+        <div id="messages"></div>
+        <div class="btn btn-block btn-primary" onclick="synchronize()">Update all clients</div>
+    </body>
+</html>
